@@ -1,0 +1,34 @@
+/* Colors */
+$main-menu-color: #333333;
+$main-menu-hover-color: lighten($main-menu-color, 20%);
+$main-link-color: #122D63;
+$main-link-color-lighten: lighten($main-link-color, 10%);
+$bg-color: #F9F9F9;
+$footer-bg-color: #EDEDF0;
+$participants-font-color: #333333;
+
+/* Fonts */
+
+
+
+
+/* Mixins */
+
+@mixin block-title {
+  margin-top: 12px;
+	color: black;
+	text-align: left;
+	font-family: 'Myriad Pro', "Arial";
+	font-size: 1.3em;
+	text-transform: uppercase;
+	border-bottom-style: solid;
+	border-width:1px;
+	border-color: #CCCCCC;
+}
+
+
+
+@mixin footer-text{
+	font-size: 1em;
+	color: #333333;
+}
