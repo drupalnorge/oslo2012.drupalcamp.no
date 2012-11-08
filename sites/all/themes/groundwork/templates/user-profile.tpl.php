@@ -52,6 +52,34 @@ profile_load_profile($account);
 
 <div class="fields"><?php print check_plain($account->profile_place); ?> (<?php print check_plain($account->profile_location); ?>)</div>
 
+
+<!-- So much for logic-less templates :-) -->
+<p><?php 
+switch (check_plain($account->profile_membership)){
+  case 'No membership and no Drupalcamp':
+  print "<ul><li>Not attending DrupalCamp 2012. <li>Not a member of Foreningen Drupal Norge</ul>";
+  break;
+  case 'Only membership in Foreningen Drupal Norge (100,-)':
+    print "<ul><li>Not attending DrupalCamp 2012. <li>Member of Foreningen Drupal Norge!</ul>";
+
+  break;
+  case 'DrupalCamp + membership in Foreningen Drupal Norge (250,-)':
+    print "<ul><li>Attending DrupalCamp 2012! <li>Member of Foreningen Drupal Norge!</ul>";
+
+break;
+case 'DrupalCamp without membership (200,-)':
+  print "<ul><li>Attending DrupalCamp! <li>Not a member of Foreningen Drupal Norge</ul>";
+
+break;
+default:
+  print "No info about DrupalCamp or membership";
+break;
+}
+
+
+
+?></p>
+
 <?php if($account->profile_linkedin or $account->profile_twitter):  ?>
 <div class="fields">
   <table>
