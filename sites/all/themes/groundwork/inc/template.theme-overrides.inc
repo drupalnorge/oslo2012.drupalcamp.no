@@ -363,3 +363,21 @@ function groundwork_item_list($items = array(), $title = NULL, $type = 'ul', $at
   $output .= '</div>';
   return $output;
 }
+
+
+
+ function groundwork_menu_item_link($link){
+    global $user;
+
+ if ($link['path'] === 'user/%/edit/Drupalcamp' && !(in_array('administrator', $user->roles))) {
+  dsm($user);
+    return '';
+  }
+  else {
+    if (empty($link['localized_options'])) {
+      $link['localized_options'] = array();
+    }
+
+    return l($link['title'], $link['href'], $link['localized_options']);
+  }
+ }
