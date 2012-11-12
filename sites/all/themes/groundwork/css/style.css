@@ -1683,3 +1683,35 @@ body.logged-in a.login {
 .sponsor-block.sponsor-silver .even {
   margin-right: 0;
 }
+
+/**
+ * Custom button
+ */
+.finish-registration a {
+  display: block;
+  padding: 1em 1.5em;
+  color: white;
+  text-align: center;
+  line-height: 1.5em;
+  font-size: 1.1em;
+  text-shadow: black 0 -1px 0;
+  background-color: #d62636;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #dc3a48), color-stop(100%, #c02231));
+  background-image: -webkit-linear-gradient(#dc3a48, #c02231);
+  background-image: -moz-linear-gradient(#dc3a48, #c02231);
+  background-image: -o-linear-gradient(#dc3a48, #c02231);
+  background-image: linear-gradient(#dc3a48, #c02231);
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  -ms-border-radius: 10px;
+  -o-border-radius: 10px;
+  border-radius: 10px;
+}
+.finish-registration a:hover {
+  background-color: #e04f5c;
+  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #e46570), color-stop(100%, #dc3a48));
+  background-image: -webkit-linear-gradient(#e46570, #dc3a48);
+  background-image: -moz-linear-gradient(#e46570, #dc3a48);
+  background-image: -o-linear-gradient(#e46570, #dc3a48);
+  background-image: linear-gradient(#e46570, #dc3a48);
+}
