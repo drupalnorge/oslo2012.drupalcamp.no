@@ -1615,9 +1615,6 @@ body.logged-in a.login {
 #block-views-frontpage_banner-block_1 .block-content-inner {
   padding: 0;
 }
-#block-views-frontpage_banner-block_1 img {
-  border: 1px solid #D2D3D2;
-}
 #block-views-frontpage_banner-block_1 .views-slideshow-controls-top {
   position: absolute;
   top: 160px;
