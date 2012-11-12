@@ -2626,10 +2626,6 @@ body.logged-in a.login { // Hide login button when logged in.
     padding: 0;
   }
   
-  img {
-    border: 1px solid #D2D3D2;
-  }
-  
   .views-slideshow-controls-top {
     position: absolute;
     top: 160px;
@@ -2705,6 +2701,30 @@ body.logged-in a.login { // Hide login button when logged in.
     
     .even {
       margin-right: 0;
+    }
+  }
+}
+
+/**
+ * Custom button
+ */
+.finish-registration {
+
+  a {
+    display: block;
+    padding: 1em 1.5em;
+    color: white;
+    text-align: center;
+    line-height: 1.5em;
+    font-size: 1.1em;
+    @include text-shadow(black 0 -1px 0);
+    background-color: $mainCTA-color;
+    @include background-image(linear-gradient(lighten($mainCTA-color,5%), darken($mainCTA-color,5%)));
+    @include border-radius(10px);
+
+    &:hover {
+      background-color: lighten($mainCTA-color, 10%);
+      @include background-image(linear-gradient(lighten($mainCTA-color,15%), lighten($mainCTA-color,5%)));
     }
   }
 }
