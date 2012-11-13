@@ -1526,12 +1526,13 @@ ul.primary li a {
   width: 160px;
   height: 54px;
   background: transparent url(../images/btn-register.png) left top;
+  background-position-y: 108px;
   overflow: hidden;
   text-indent: -999999%;
   display: block;
 }
 #block-menu-menu-register-login-menu li.first a:hover {
-  background-position: left -54px;
+  background-position: left 54px;
 }
 #block-menu-menu-register-login-menu li a.login, #block-menu-menu-register-login-menu li a.logout {
   width: 160px;
