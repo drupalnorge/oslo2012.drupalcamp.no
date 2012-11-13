@@ -2523,12 +2523,24 @@ ul.primary li a {
     list-style: none;
     list-style-image: none;
     
-    &.first a {
+    &.register a {
       width: 160px;
       height: 54px;
-      background: transparent url(../images/btn-register.png) left top;
+      background: transparent url(../images/btn-register.png);
+      background-position-y: 216px;
+      overflow: hidden;
+      text-indent: -999999%;
+      display: block;
+  
+      &:hover {
+       background-position: left 162px;
+      }
+}
+    &.mystuff a {
+      width: 160px;
+      height: 54px;
+      background: transparent url(../images/btn-register.png);
       background-position-y: 108px;
-
       overflow: hidden;
       text-indent: -999999%;
       display: block;
@@ -2536,8 +2548,8 @@ ul.primary li a {
       &:hover {
        background-position: left 54px;
       }
-    }  
-    
+    } 
+
     a.login, a.logout {
       width: 160px;
       height: 54px;
