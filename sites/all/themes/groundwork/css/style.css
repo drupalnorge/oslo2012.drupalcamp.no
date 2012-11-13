@@ -1522,16 +1522,28 @@ ul.primary li a {
   list-style: none;
   list-style-image: none;
 }
-#block-menu-menu-register-login-menu li.first a {
+#block-menu-menu-register-login-menu li.register a {
   width: 160px;
   height: 54px;
-  background: transparent url(../images/btn-register.png) left top;
+  background: transparent url(../images/btn-register.png);
+  background-position-y: 216px;
+  overflow: hidden;
+  text-indent: -999999%;
+  display: block;
+}
+#block-menu-menu-register-login-menu li.register a:hover {
+  background-position: left 162px;
+}
+#block-menu-menu-register-login-menu li.mystuff a {
+  width: 160px;
+  height: 54px;
+  background: transparent url(../images/btn-register.png);
   background-position-y: 108px;
   overflow: hidden;
   text-indent: -999999%;
   display: block;
 }
-#block-menu-menu-register-login-menu li.first a:hover {
+#block-menu-menu-register-login-menu li.mystuff a:hover {
   background-position: left 54px;
 }
 #block-menu-menu-register-login-menu li a.login, #block-menu-menu-register-login-menu li a.logout {
