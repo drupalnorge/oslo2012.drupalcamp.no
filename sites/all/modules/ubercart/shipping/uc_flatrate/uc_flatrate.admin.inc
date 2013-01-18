@@ -42,10 +42,9 @@ function uc_flatrate_admin_methods() {
  * Configure the store default product shipping rates.
  *
  * @ingroup forms
- * @see
- *   uc_flatrate_admin_method_edit_form_validate()
- *   uc_flatrate_admin_method_edit_form_delete()
- *   uc_flatrate_admin_method_edit_form_submit()
+ * @see uc_flatrate_admin_method_edit_form_validate()
+ * @see uc_flatrate_admin_method_edit_form_delete()
+ * @see uc_flatrate_admin_method_edit_form_submit()
  */
 function uc_flatrate_admin_method_edit_form($form_state, $mid = 0) {
   $form = array();
@@ -55,6 +54,15 @@ function uc_flatrate_admin_method_edit_form($form_state, $mid = 0) {
   if (is_numeric($mid) && ($method = db_fetch_object(db_query("SELECT * FROM {uc_flatrate_methods} WHERE mid = %d", $mid)))) {
     $form['mid'] = array('#type' => 'value', '#value' => $mid);
   }
+  else {
+    $method = (object) array(
+      'title' => '',
+      'label' => '',
+      'base_rate' => '',
+      'product_rate' => '',
+    );
+  }
+
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Shipping method title'),
@@ -126,7 +134,7 @@ function uc_flatrate_admin_method_edit_form_delete($form, &$form_state) {
  * @see uc_flatrate_admin_method_edit_form()
  */
 function uc_flatrate_admin_method_edit_form_submit($form, &$form_state) {
-  if ($form_state['values']['mid']) {
+  if (isset($form_state['values']['mid'])) {
     db_query("UPDATE {uc_flatrate_methods} SET title = '%s', label = '%s', base_rate = %f, product_rate = %f WHERE mid = %d",
       $form_state['values']['title'], $form_state['values']['label'], $form_state['values']['base_rate'], $form_state['values']['product_rate'], $form_state['values']['mid']);
     drupal_set_message(t("Flat rate shipping method was updated."));

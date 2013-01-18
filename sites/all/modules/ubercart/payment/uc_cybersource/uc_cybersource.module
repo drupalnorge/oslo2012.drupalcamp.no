@@ -15,7 +15,7 @@
 
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function uc_cybersource_menu() {
   $items['cybersource/hop-post'] = array(
@@ -48,7 +48,7 @@ function uc_cybersource_hop_post_access() {
 }
 
 /**
- * Implementation of hook_form_alter().
+ * Implements hook_form_alter().
  */
 function uc_cybersource_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'uc_payment_gateways_form') {
@@ -70,7 +70,7 @@ function uc_cybersource_payment_gateway_settings_submit($form, &$form_state) {
   // If CC encryption has been configured properly.
   if ($key = uc_credit_encryption_key()) {
     // Setup our encryption object.
-    $crypt = new uc_encryption_class;
+    $crypt = new uc_encryption_class();
 
     // Encrypt the Merchant ID and Transaction key.
     if (!empty($form_state['values']['uc_cybersource_soap_merchant_id'])) {
@@ -90,7 +90,7 @@ function uc_cybersource_payment_gateway_settings_submit($form, &$form_state) {
  ******************************************************************************/
 
 /**
- * Implementation of hook_payment_gateway().
+ * Implements hook_payment_gateway().
  */
 function uc_cybersource_payment_gateway() {
   // CyberSource APIs other than HOP require uc_credit to be enabled.
@@ -109,7 +109,7 @@ function uc_cybersource_payment_gateway() {
   return $gateways;
 }
 
-// Processes a payment POST from the Cybersource Hosted Order Page API.
+// Processes a payment POST from the CyberSource Hosted Order Page API.
 function uc_cybersource_hop_post() {
   if (!uc_cybersource_hop_include()) {
     watchdog('uc_cybersource_hop', 'Unable to receive HOP POST due to missing or unreadable HOP.php file.', array(), 'error');
@@ -147,7 +147,7 @@ function uc_cybersource_hop_post() {
 
   switch ($decision) {
     case 'ACCEPT':
-      watchdog('uc_cybersource_hop', 'Cybersource verified successful payment.');
+      watchdog('uc_cybersource_hop', 'CyberSource verified successful payment.');
       $duplicate = db_result(db_query("SELECT COUNT(*) FROM {uc_payment_cybersource_hop_post} WHERE order_id = '%s' AND decision = 'ACCEPT'", $order_id));
         if ($duplicate > 0) {
         watchdog('uc_cybersource_hop', 'CS HOP transaction for order @order-id has been processed before.', array('@order_id' => $order_id), WATCHDOG_NOTICE);
@@ -166,7 +166,7 @@ function uc_cybersource_hop_post() {
       $comment = t('CyberSource request ID: @txn_id', array('@txn_id' => $request_id));
       uc_payment_enter($order_id, 'cybersource_hop', $payment_amount, $order->uid, NULL, $comment);
       uc_cart_complete_sale($order);
-      uc_order_comment_save($order_id, 0, t('Payment of @amount @currency submitted through Cybersource with request ID @rid.', array('@amount' => uc_price($payment_amount, $context, $options), '@currency' => $payment_currency, '@rid' => $request_id)), 'order', 'payment_received');
+      uc_order_comment_save($order_id, 0, t('Payment of @amount @currency submitted through CyberSource with request ID @rid.', array('@amount' => uc_price($payment_amount, $context, $options), '@currency' => $payment_currency, '@rid' => $request_id)), 'order', 'payment_received');
       break;
     case 'ERROR':
       uc_order_comment_save($order_id, 0, t("Payment error:@reason with request ID @rid", array('@reason' => $reason, '@rid' => '@request_id')), 'admin');
@@ -258,6 +258,7 @@ function uc_cybersource_settings_form() {
     '#type' => 'textarea',
     '#title' => t('Transaction key'),
     '#default_value' => $login['transaction_key'],
+    '#wysiwyg' => FALSE,
   );
   $form['soap']['uc_cybersource_soap_create_profile'] = array(
     '#type' => 'checkbox',
@@ -349,7 +350,7 @@ function uc_payment_method_cybersource_hop($op, $arg1) {
   if ($op == 'settings') {
     $form['uc_cybersource_hop_server'] = array(
       '#type' => 'select',
-      '#title' => t('Cybersource HOP server'),
+      '#title' => t('CyberSource HOP server'),
       '#description' => t('Select between production/live or test mode.'),
       '#options' => array(
         'https://orderpagetest.ic3.com/hop/orderform.jsp' => t('Test Center'),
@@ -502,7 +503,7 @@ function uc_cybersource_hop_form($form_state, $order) {
   $form['#action'] = variable_get('uc_cybersource_hop_server', 'https://orderpagetest.ic3.com/hop/orderform.jsp');
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => variable_get('uc_cybersource_hop_checkout_button', t('Submit Order')),
+    '#value' => t('Submit order'),
   );
 
   return $form;
@@ -579,7 +580,7 @@ function uc_cybersource_charge($order_id, $amount, $data) {
       }
 
       $request['ccAuthService_run'] = 'true';
-      if (variable_get('uc_cybersource_transaction_type', 'sale') == 'sale') {
+      if (variable_get('uc_cybersource_hop_transaction_type', 'sale') == 'sale') {
         $request['ccCaptureService_run'] = 'true';
       }
       $request['merchantReferenceCode'] = $order_id;
@@ -636,7 +637,7 @@ function _uc_cybersource_post_charge($order, $amount, $data, $cc_type, $country)
   $request['orderPage_signaturePublic'] = $pub_digest;
   $request['orderPage_version'] = '4';
   $request['orderPage_serialNumber'] = $serialNumber;
-  $request['orderPage_transactionType'] = variable_get('uc_cybersource_transaction_type', 'sale');
+  $request['orderPage_transactionType'] = variable_get('uc_cybersource_hop_transaction_type', 'sale');
 
   $data = '';
   while (list($key, $value) = each($request)) {
@@ -657,7 +658,7 @@ function _uc_cybersource_post_charge($order, $amount, $data, $cc_type, $country)
   curl_setopt($ch, CURLOPT_POST, 1);
   curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
   curl_setopt($ch, CURLOPT_NOPROGRESS, 1);
   curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
   $response = curl_exec($ch);
@@ -677,7 +678,7 @@ function _uc_cybersource_post_charge($order, $amount, $data, $cc_type, $country)
       'revision' => 'formatted-original',
       'type' => 'amount',
     );
-    $o_comment = t('<b>Credit card !type:</b> !amount<br /><b>Decision: @decision</b><br /><b>Reason:</b> !reason', array('!type' => variable_get('uc_cybersource_transaction_type', 'sale'), '!amount' => uc_price($nvp['orderAmount'], $context), '@decision' => $nvp['decision'], '!reason' => _parse_cs_reason_code($nvp['reasonCode'])));
+    $o_comment = t('<b>Credit card !type:</b> !amount<br /><b>Decision: @decision</b><br /><b>Reason:</b> !reason', array('!type' => variable_get('uc_cybersource_hop_transaction_type', 'sale'), '!amount' => uc_price($nvp['orderAmount'], $context), '@decision' => $nvp['decision'], '!reason' => _parse_cs_reason_code($nvp['reasonCode'])));
     $p_comment = t('!id<br />!decision, Reason: !reason', array('!id' => $nvp['orderPage_serialNumber'], '!decision' => $nvp['decision'], '!reason' => $nvp['reasonCode']));
     if (!empty($nvp['ccAuthReply_avsCode'])) {
       $o_comment .= t('<br /><b>AVS:</b> !avs', array('!avs' => _parse_cs_avs_code($nvp['ccAuthReply_avsCode'])));
@@ -687,7 +688,7 @@ function _uc_cybersource_post_charge($order, $amount, $data, $cc_type, $country)
       $o_comment .= t('<br /><b>CVV:</b> !cvv', array('!cvv' => _parse_cs_cvv_code($nvp['ccAuthReply_cvCode'])));
       $p_comment .= t(', CVV: @cvv', array('@cvv' => $nvp['ccAuthReply_cvCode']));
     }
-    uc_order_comment_save($order_id, $user->uid, $o_comment, 'admin');
+    uc_order_comment_save($order->order_id, $user->uid, $o_comment, 'admin');
 
     if ($nvp['decision'] == 'ACCEPT') {
       $result = array(
@@ -865,9 +866,14 @@ function _uc_cybersource_soap_charge($order, $amount, $data, $cc_type, $country)
       }
 
       // Add the line items to the item array.
+      $discount_amount = 0;
       foreach ((array) $order->line_items as $line_item) {
+        // Handle negative line items.
+        if ($line_item['amount'] < 0) {
+          $discount_amount += -$line_item['amount'];
+        }
         // Skip subtotal line items.
-        if (strpos($line_item['type'], 'subtotal') === FALSE) {
+        elseif (strpos($line_item['type'], 'subtotal') === FALSE) {
           $obj = $request->item[] = new stdClass();
 
           $obj->productName = $line_item['title'];
@@ -879,6 +885,11 @@ function _uc_cybersource_soap_charge($order, $amount, $data, $cc_type, $country)
           $counter++;
         }
       }
+    }
+
+    // Add the total order discount into the request.
+    if ($discount_amount != 0) {
+      $request->purchaseTotals->discountAmount = $discount_amount;
     }
 
     // Add business rules.
@@ -939,6 +950,7 @@ function _uc_cybersource_soap_charge($order, $amount, $data, $cc_type, $country)
         'comment' => $p_comment,
         'message' => $o_comment,
         'uid' => $user->uid,
+        'data' => array('module' => 'uc_cybersource', 'txn_type' => $data['txn_type'], 'request_id' => $reply->requestID),
       );
 
       // If this was an authorization only transaction...
@@ -1238,7 +1250,7 @@ function uc_cybersource_calculate_tax($order) {
    *   }
    *
    *   $request['ccAuthService_run'] = 'true';
-   *   if (variable_get('uc_cybersource_transaction_type', 'sale') == 'sale') {
+   *   if (variable_get('uc_cybersource_hop_transaction_type', 'sale') == 'sale') {
    *     $request['ccCaptureService_run'] = 'true';
    *   }
    *   $request['merchantReferenceCode'] = $order_id;
@@ -1267,7 +1279,7 @@ function _uc_cybersource_soap_login_data() {
   // If CC encryption has been configured properly.
   if ($key = uc_credit_encryption_key()) {
     // Setup our encryption object.
-    $crypt = new uc_encryption_class;
+    $crypt = new uc_encryption_class();
 
     // Decrypt the Merchant ID and Transaction key.
     if (!empty($merchant_id)) {

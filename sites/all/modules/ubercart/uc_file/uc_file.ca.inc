@@ -44,12 +44,12 @@ function uc_file_ca_predicate() {
       '#conditions' => array(
         array(
           '#name' => 'uc_order_status_condition',
-          '#title' => t('If the order status is completed.'),
+          '#title' => t('If the updated order status is payment received.'),
           '#argument_map' => array(
             'order' => 'updated_order',
           ),
           '#settings' => array(
-            'order_status' => 'completed',
+            'order_status' => 'payment_received',
           ),
         ),
       ),
@@ -84,7 +84,7 @@ function uc_file_ca_predicate() {
         '#argument_map' => $order_args,
         '#settings' => array(
           'from' => uc_store_email_from(),
-          'addresses' => '[order-email]',
+          'addresses' => '[order-email-raw]',
           'subject' => t("File Downloads for Order# [order-id]"),
           'message' => t("Your order (order# [order-link]) at [store-name] included file download(s). You may access them with the following link(s):\n\n[file-downloads]\n\nAfter downloading these files these links will have expired. If you need to download the files again, you can login at [site-login] and visit the \"My Account\" section of the site.\n\nThanks again, \n\n[store-name]\n[site-slogan]"),
           'format' => 1,
@@ -243,7 +243,7 @@ function uc_file_action_order_renew($order) {
       $file_modification = array(
         'download_limit' => uc_file_get_download_limit($file),
         'address_limit' => uc_file_get_address_limit($file),
-        'expiration' => _uc_file_expiration_date(uc_file_get_time_limit($file), $file_user->expiration),
+        'expiration' => _uc_file_expiration_date(uc_file_get_time_limit($file), max($file_user->expiration, time())),
       );
 
       // Add file_user(s) for this file/directory. (No overwrite)
