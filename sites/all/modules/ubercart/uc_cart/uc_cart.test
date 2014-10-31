@@ -282,22 +282,55 @@ class UbercartCartCheckoutTestCase extends UbercartTestHelper {
     $this->assertEqual($email, $mail['to'], 'Email address containing apostrophe is handled correctly.');
   }
 
-  function testCheckoutLogin() {
-    // Log in after checkout.
-    $settings = array(
-      'uc_new_customer_login' => TRUE,
-    );
+  function testCheckoutNewUsername() {
+    // Configure the checkout for this test.
     $this->drupalLogin($this->adminUser);
-    $this->drupalPost('admin/store/settings/checkout/edit', $settings, t('Save configuration'));
+    $settings = array(
+      // Allow customer to specify username.
+      'uc_cart_new_account_name' => TRUE,
+      // Disable address panes.
+      'uc_pane_delivery_enabled' => FALSE,
+      'uc_pane_billing_enabled' => FALSE,
+    );
+    $this->drupalPost('admin/store/settings/checkout/edit/panes', $settings, t('Save configuration'));
     $this->drupalLogout();
 
-    // Test checkout.
+    // Test with an account that already exists.
     $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $edit = array(
+      'panes[customer][primary_email]' => $this->randomName(8) . '@example.com',
+      'panes[customer][new_account][name]' => $this->adminUser->name,
+    );
+    $this->drupalPost('cart/checkout', $edit, 'Review order');
+    $this->assertText('The username ' . $this->adminUser->name . ' is already taken.');
+
+    // Let the account be automatically created instead.
+    $edit = array(
+      'panes[customer][primary_email]' => $this->randomName(8) . '@example.com',
+      'panes[customer][new_account][name]' => '',
+    );
+    $this->drupalPost('cart/checkout', $edit, 'Review order');
+    $this->drupalPost(NULL, array(), 'Submit order');
+    $this->assertText('Your order is complete!');
+    $this->assertText('A new account has been created');
+  }
+
+  function testCheckoutLogin() {
+    // Log in after checkout.
+    variable_set('uc_new_customer_login', TRUE);
+
+    // Test checkout.
+    $this->drupalGet('node/' . $this->product->nid);
+    $this->assertNotNull($this->session_id, 'Session ID is set.');
+    $session_id = $this->session_id;
+    $this->drupalPost(NULL, array(), t('Add to cart'));
     $this->checkout();
     $this->assertRaw('Your order is complete!');
     $this->assertRaw('you are already logged in');
 
     // Confirm login.
+    $this->assertNotNull($this->session_id, 'Session ID is set.');
+    $this->assertNotIdentical($this->session_id, $session_id, 'Session ID has changed.');
     $this->drupalGet('<front>');
     $this->assertText('My account', 'User is logged in.');
 
@@ -403,6 +436,33 @@ class UbercartCartCheckoutTestCase extends UbercartTestHelper {
     $this->assertEqual(count($mails), 3, '3 e-mails were sent.');
     variable_del('drupal_test_email_collector');
   }
+
+  function testCustomerInformationCheckoutPane() {
+    // Log in as a customer and add an item to the cart.
+    $this->drupalLogin($this->customer);
+    $this->drupalPost('node/' . $this->product->nid, array(), t('Add to cart'));
+    $this->drupalPost('cart', array(), 'Checkout');
+
+    // Test the customer information pane.
+    $mail = $this->customer->mail;
+    $this->assertText('Customer information');
+    $this->assertText('Order information will be sent to your account e-mail listed below.');
+    $this->assertText('E-mail address: ' . $mail);
+
+    // Use the 'edit' link to change the email address on the account.
+    $new_mail = $this->randomName() . '@example.com';
+    $this->clickLink('edit');
+    $data = array(
+      'mail' => $new_mail,
+    );
+    $this->drupalPost(NULL, $data, 'Save');
+
+    // Test the updated email address.
+    $this->assertText('Order information will be sent to your account e-mail listed below.');
+    $this->assertNoText('E-mail address: ' . $mail);
+    $this->assertText('E-mail address: ' . $new_mail);
+  }
+
 }
 
 /**

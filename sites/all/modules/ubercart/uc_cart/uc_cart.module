@@ -374,12 +374,19 @@ function uc_cart_block($op = 'list', $delta = 0, $edit = array()) {
     case 'view':
       // 0 = Default shopping cart block.
       if ($delta == 0) {
-        $cachable = !$user->uid && variable_get('cache', CACHE_DISABLED) != CACHE_DISABLED;
+        // Pressflow has a function to determine cacheability.
+        if (function_exists('drupal_page_is_cacheable')) {
+          $cachable = drupal_page_is_cacheable();
+        }
+        else {
+          $cachable = !$user->uid && variable_get('cache', CACHE_DISABLED) != CACHE_DISABLED;
+        }
+
         $product_count = count(uc_cart_get_contents());
 
         // Display nothing if the block is set to hide on empty and there are no
         // items in the cart.
-        if (!$cachable && variable_get('uc_cart_block_empty_hide', FALSE) && !$product_count) {
+        if (variable_get('uc_cart_block_empty_hide', FALSE) && !$product_count) {
           return;
         }
 
@@ -1222,7 +1229,8 @@ function uc_cart_complete_sale($order, $login = FALSE) {
   // Log in new users, if requested.
   if ($type == 'new_user' && $login && !$user->uid) {
     $type = 'new_user_logged_in';
-    $user = user_load($order->uid);
+    $account = user_load($order->uid);
+    user_external_login($account);
   }
 
   $variables['!new_username'] = isset($order->data['new_user']['name']) ? $order->data['new_user']['name'] : '';
@@ -1300,7 +1308,8 @@ function uc_cart_complete_sale_account($order) {
 
   // Send the customer their account details if enabled.
   if (variable_get('uc_new_customer_email', TRUE)) {
-    drupal_mail('user', 'register_no_approval_required', $order->primary_email, uc_store_mail_recipient_language($order->primary_email), array('account' => $account), uc_store_email_from());
+    $type = variable_get('uc_new_customer_status_active', TRUE) ? 'register_no_approval_required' : 'register_pending_approval';
+    drupal_mail('user', $type, $order->primary_email, uc_store_mail_recipient_language($order->primary_email), array('account' => $account), uc_store_email_from());
   }
 
   $order->uid = $account->uid;

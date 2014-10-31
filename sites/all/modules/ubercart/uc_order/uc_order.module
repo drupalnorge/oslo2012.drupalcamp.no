@@ -594,14 +594,18 @@ function uc_order_user($op, &$edit, &$account, $category = NULL) {
  * Implements hook_mail().
  */
 function uc_order_mail($key, &$message, $params) {
-  $langcode = isset($message['language']) ? $message['language']->language : NULL;
+  global $language;
+  if (isset($message['language'])) {
+    $original_global_language = drupal_clone($language);
+    $language = $message['language'];
+  }
 
-  // Build the appropriate message paramaters based on the e-mail key.
+  // Build the appropriate message parameters based on the e-mail key.
   switch ($key) {
     // Setup an e-mailed invoice.
     case 'invoice':
       $message['headers']['Content-Type'] = 'text/html; charset=UTF-8; format=flowed';
-      $message['subject'] = t('Your Order Invoice', array(), $langcode);
+      $message['subject'] = t('Your Order Invoice');
       $message['from'] = uc_store_email_from();
       $message['body'][] = theme('uc_order', $params['order'], 'admin-mail', variable_get('uc_cust_order_invoice_template', 'customer'));
       break;
@@ -628,6 +632,10 @@ function uc_order_mail($key, &$message, $params) {
       }
 
       break;
+  }
+
+  if (isset($message['language'])) {
+    $language = $original_global_language;
   }
 }
 
@@ -1928,38 +1936,14 @@ function uc_order_actions($order, $icon_html = FALSE) {
     );
   }
 
-  if (user_access('delete orders') || user_access('unconditionally delete orders')) {
-    // Unconditional deletion perms are always TRUE.
-    $can_delete = TRUE;
-    if (!user_access('unconditionally delete orders')) {
-      // Only users with unconditional deletion perms can delete completed orders.
-      if ($state == 'completed') {
-        $can_delete = FALSE;
-      }
-      else {
-        // See if any modules have a say in this order's eligibility for deletion
-        foreach (module_list() as $module) {
-          $function = $module .'_order';
-          // $order must be passed by reference.
-          if (function_exists($function) && ($response = $function('can_delete', $order, NULL))) {
-            // Break out early if possible.
-            if ($response === FALSE) {
-              $can_delete = FALSE;
-              break;
-            }
-          }
-        }
-      }
-    }
-    if ($can_delete) {
-      $alt = t('Delete order @order_id.', $order_id);
-      $actions[] = array(
-        'name' => t('Delete'),
-        'url' => 'admin/store/orders/'. $order->order_id .'/delete',
-        'icon' => '<img src="'. base_path() . drupal_get_path('module', 'uc_store') .'/images/order_delete.gif" alt="'. $alt .'" />',
-        'title' => $alt,
-      );
-    }
+  if (uc_order_can_delete($order)) {
+    $alt = t('Delete order @order_id.', $order_id);
+    $actions[] = array(
+      'name' => t('Delete'),
+      'url' => 'admin/store/orders/'. $order->order_id .'/delete',
+      'icon' => '<img src="'. base_path() . drupal_get_path('module', 'uc_store') .'/images/order_delete.gif" alt="'. $alt .'" />',
+      'title' => $alt,
+    );
   }
 
   $extra = module_invoke_all('order_actions', $order);
@@ -1986,17 +1970,36 @@ function uc_order_actions($order, $icon_html = FALSE) {
 }
 
 /**
- * Return TRUE if an order can be deleted by the current user.
- *
  * Access callback for admin/store/orders/%uc_order/delete.
+ *
+ * Returns TRUE if an order can be deleted by the current user.
  */
-function uc_order_can_delete($order) {
-  $can_delete = FALSE;
-  foreach (uc_order_actions($order) as $action) {
-    if ($action['name'] == t('Delete')) {
+function uc_order_can_delete($order, $account = NULL) {
+  if (user_access('unconditionally delete orders', $account)) {
+    // Unconditional deletion perms are always TRUE.
+    return TRUE;
+  }
+  elseif (user_access('delete orders', $account)) {
+    // Only users with unconditional deletion perms can delete completed orders.
+    $state = uc_order_status_data($order->order_status, 'state');
+    if ($state == 'completed') {
+      return FALSE;
+    }
+    else {
       $can_delete = TRUE;
+      // See if any modules have a say in this order's eligibility for deletion.
+      foreach (module_implements('order') as $module) {
+        $function = $module . '_order';
+        if (function_exists($function) && $function('can_delete', $order, NULL) === FALSE) {
+          $can_delete = FALSE;
+          break;
+        }
+      }
+
+      return $can_delete;
     }
   }
-
-  return $can_delete;
+  else {
+    return FALSE;
+  }
 }

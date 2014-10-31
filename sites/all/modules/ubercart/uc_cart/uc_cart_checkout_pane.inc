@@ -37,24 +37,16 @@ function uc_checkout_pane_customer($op, &$arg1, $arg2) {
 
   switch ($op) {
     case 'view':
-      if (!empty($arg1->primary_email)) {
-        $email = $arg1->primary_email;
-      }
-      elseif (isset($user->mail)) {
-        $email = $user->mail;
-      }
-      else {
-        $email = '';
-      }
-
       if ($user->uid) {
-        $description = t('Order information will be sent to your account e-mail listed below.');// .'<br />'
-        $contents['primary_email'] = array('#type' => 'hidden', '#value' => check_plain($email));
+        $email = $user->mail;
+        $description = t('Order information will be sent to your account e-mail listed below.');// . '<br />'
+        $contents['primary_email'] = array('#type' => 'hidden', '#value' => $email);
         $contents['email_text'] = array(
           '#value' => '<div>'. t('<b>E-mail address:</b> @email (<a href="!url">edit</a>)', array('@email' => $email, '!url' => url('user/'. $user->uid .'/edit', array('query' => drupal_get_destination())))) .'</div>',
         );
       }
       else {
+        $email = $arg1->primary_email;
         $description = t('Enter a valid email address for this order or <a href="!url">click here</a> to login with an existing account and return to checkout.', array('!url' => url('user/login', array('query' => drupal_get_destination()))));
         $contents['primary_email'] = uc_textfield(t('E-mail address'), $email, TRUE, NULL, 64);
       }
@@ -104,16 +96,6 @@ function uc_checkout_pane_customer($op, &$arg1, $arg2) {
           );
           $contents['new_account'] = array_merge($array, $contents['new_account']);
         }
-
-        /**
-         * This code adds profile fields required for registration to the
-         * customer checkout pane.  However, I don't have the time to fool with
-         * validation/submission stuff, so I'm postponing this feature. -RS
-        $null = NULL;
-        $extra = _user_forms($null, NULL, NULL, 'register');
-        if (!empty($extra)) {
-          $contents = array_merge($contents, $extra);
-        }*/
       }
 
       return array('description' => $description, 'contents' => $contents);
@@ -154,10 +136,12 @@ function uc_checkout_pane_customer($op, &$arg1, $arg2) {
             if (!empty($message)) {
               form_set_error('panes][customer][new_account][name', $message);
             }
-            if (db_fetch_object(db_query("SELECT uid FROM {users} WHERE LOWER(name) = LOWER('%s')", $arg2['new_account']['name'])) > 0) {
+            elseif (db_fetch_object(db_query("SELECT uid FROM {users} WHERE LOWER(name) = LOWER('%s')", $arg2['new_account']['name']))) {
               form_set_error('panes][customer][new_account][name', t('The username %name is already taken. Please enter a different name or leave the field blank for your username to be your e-mail address.', array('%name' => $arg2['new_account']['name'])));
             }
-            $arg1->data['new_user']['name'] = $arg2['new_account']['name'];
+            else {
+              $arg1->data['new_user']['name'] = $arg2['new_account']['name'];
+            }
           }
           // Validate the password.
           if (variable_get('uc_cart_new_account_password', FALSE)) {

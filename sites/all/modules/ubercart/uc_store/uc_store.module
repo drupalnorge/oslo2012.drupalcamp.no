@@ -276,8 +276,8 @@ function uc_store_menu() {
   $items['admin/store/settings/countries/%/disable'] = array(
     'title' => 'Disable a country',
     'description' => 'Disable a country from use.',
-    'page callback' => 'uc_country_disable',
-    'page arguments' => array(4),
+    'page callback' => '_uc_country_perform_country_action',
+    'page arguments' => array('uc_country_disable', 4),
     'access arguments' => array('administer store'),
     'type' => MENU_CALLBACK,
     'file' => 'uc_store.admin.inc',
@@ -285,8 +285,8 @@ function uc_store_menu() {
   $items['admin/store/settings/countries/%/enable'] = array(
     'title' => 'Enable a country',
     'description' => 'Enable a disabled country.',
-    'page callback' => 'uc_country_enable',
-    'page arguments' => array(4),
+    'page callback' => '_uc_country_perform_country_action',
+    'page arguments' => array('uc_country_enable', 4),
     'access arguments' => array('administer store'),
     'type' => MENU_CALLBACK,
     'file' => 'uc_store.admin.inc',
@@ -303,8 +303,8 @@ function uc_store_menu() {
   $items['admin/store/settings/countries/%/update/%'] = array(
     'title' => 'Update a country',
     'description' => 'Update an installed country.',
-    'page callback' => 'uc_country_update',
-    'page arguments' => array(4, 6),
+    'page callback' => '_uc_country_perform_country_action',
+    'page arguments' => array('uc_country_update', 4, 6),
     'access arguments' => array('administer store'),
     'type' => MENU_CALLBACK,
     'file' => 'uc_store.admin.inc',
@@ -438,6 +438,8 @@ function uc_store_theme() {
  * Implements hook_token_values(). (token.module)
  */
 function uc_store_token_values($type, $object = NULL) {
+  global $theme_key;
+
   $values = array();
 
   switch ($type) {
@@ -445,9 +447,22 @@ function uc_store_token_values($type, $object = NULL) {
       $login_link = url('user', array('absolute' => TRUE));
       $values['site-login'] = l($login_link, $login_link);
 
-      if ($logo = theme_get_setting('logo')) {
-        // Strip base_path from path returned by theme_get_setting().
-        $logo = substr($logo, strlen(base_path()));
+      // The site logo is available through theme_get_setting(), but calling
+      // it here may incorrectly initialise the static cache.
+      $settings = theme_get_settings($theme_key);
+      $themes = list_themes();
+      $theme_object = $themes[$theme_key];
+      if ($settings['toggle_logo']) {
+        if ($settings['default_logo']) {
+          $logo = dirname($theme_object->filename) . '/logo.png';
+        }
+        elseif ($settings['logo_path']) {
+          $logo = $settings['logo_path'];
+        }
+      }
+
+      // Use a logo; but only if we have one to use.
+      if (!empty($logo)) {
         $values['site-logo'] = theme('image', url($logo, array('absolute' => TRUE)), '', '', NULL, FALSE);
       }
       else {
@@ -1513,8 +1528,8 @@ function uc_get_addresses($uid, $type = 'billing') {
  * $_POST.)
  */
 function uc_strip_form($html) {
-  $html = preg_replace('`</?form.*>`', '', $html);
-  $html = preg_replace('`<input.*name="form_(token|id)".*>`', '', $html);
+  $html = preg_replace('`</?form[^>]*>`', '', $html);
+  $html = preg_replace('`<input.*name="form_(token|id)"[^>]*>`', '', $html);
 
   return $html;
 }
